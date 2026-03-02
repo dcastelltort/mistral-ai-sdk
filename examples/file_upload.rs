@@ -3,8 +3,11 @@
 //! This example shows how to upload a file to the Mistral AI platform.
 //!
 //! Usage:
-//!   cargo run --example file_upload -- <file_path> <purpose>
+//!   cargo run --example file_upload -- [file_path] [purpose]
 //!   MISTRAL_API_KEY=your_key cargo run --example file_upload -- "data.txt" "fine-tune"
+//!
+//! If no arguments are provided, it uses the default example file:
+//!   cargo run --example file_upload
 //!
 //! The example requires the MISTRAL_API_KEY environment variable to be set.
 //!
@@ -22,13 +25,11 @@ async fn main() -> Result<()> {
     let api_key = std::env::var("MISTRAL_API_KEY")
         .context("Missing MISTRAL_API_KEY environment variable.\nPlease set it or create a .env file from .env.example")?;
 
-    // Get file path from command line arguments
-    let file_path = std::env::args().nth(1)
-        .context("Usage: cargo run --example file_upload -- <file_path> <purpose>")?;
+    // Get file path from command line arguments, or use default example file
+    let file_path = std::env::args().nth(1).unwrap_or_else(|| "examples/data.txt".to_string());
 
-    // Get purpose from command line arguments
-    let purpose_str = std::env::args().nth(2)
-        .context("Usage: cargo run --example file_upload -- <file_path> <purpose>")?;
+    // Get purpose from command line arguments, or use default purpose
+    let purpose_str = std::env::args().nth(2).unwrap_or_else(|| "fine-tune".to_string());
 
     // Purpose is now a string in the API
     let purpose = purpose_str;
