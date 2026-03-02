@@ -21,12 +21,12 @@ pub struct FineTuningJob {
     /// Job status
     pub status: String,
     
-    /// Training file ID
-    pub training_file: String,
+    /// Training file IDs (array)
+    pub training_files: Vec<String>,
     
-    /// Validation file ID (optional)
+    /// Validation file IDs (array, optional)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub validation_file: Option<String>,
+    pub validation_files: Option<Vec<String>>,
     
     /// Hyperparameters
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -47,12 +47,12 @@ pub struct CreateFineTuningJobRequest {
     /// Model to fine-tune
     pub model: String,
     
-    /// Training file ID
-    pub training_file: String,
+    /// Training file IDs (array)
+    pub training_files: Vec<String>,
     
-    /// Validation file ID (optional)
+    /// Validation file IDs (array, optional)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub validation_file: Option<String>,
+    pub validation_files: Option<Vec<String>>,
     
     /// Hyperparameters (optional)
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -209,8 +209,8 @@ mod tests {
             "model": "mistral-tiny",
             "created_at": 1234567890,
             "status": "running",
-            "training_file": "file-123",
-            "validation_file": "file-456",
+            "training_files": ["file-123"],
+            "validation_files": ["file-456"],
             "hyperparameters": {
                 "n_epochs": 3,
                 "batch_size": 16
@@ -223,7 +223,8 @@ mod tests {
         assert_eq!(job.id, "ftjob-123");
         assert_eq!(job.model, "mistral-tiny");
         assert_eq!(job.status, "running");
-        assert_eq!(job.training_file, "file-123");
+        assert_eq!(job.training_files, vec!["file-123"]);
+        assert_eq!(job.validation_files.as_deref(), Some(&vec!["file-456".to_string()][..]));
         assert_eq!(job.fine_tuned_model.as_deref(), Some("ft:mistral-tiny:123"));
     }
 
@@ -231,8 +232,8 @@ mod tests {
     fn test_create_fine_tuning_job_request() {
         let request = CreateFineTuningJobRequest {
             model: "mistral-tiny".to_string(),
-            training_file: "file-123".to_string(),
-            validation_file: Some("file-456".to_string()),
+            training_files: vec!["file-123".to_string()],
+            validation_files: Some(vec!["file-456".to_string()]),
             hyperparameters: Some(HashMap::from([
                 ("n_epochs".to_string(), json!(3)),
                 ("batch_size".to_string(), json!(16)),
@@ -241,7 +242,7 @@ mod tests {
         };
         
         assert_eq!(request.model, "mistral-tiny");
-        assert_eq!(request.training_file, "file-123");
+        assert_eq!(request.training_files, vec!["file-123"]);
         assert_eq!(request.suffix.as_deref(), Some("custom-suffix"));
     }
 
@@ -255,7 +256,7 @@ mod tests {
                     "model": "mistral-tiny",
                     "created_at": 1234567890,
                     "status": "completed",
-                    "training_file": "file-1"
+                    "training_files": ["file-1"]
                 },
                 {
                     "id": "ftjob-2",
@@ -263,7 +264,7 @@ mod tests {
                     "model": "mistral-small",
                     "created_at": 1234567891,
                     "status": "failed",
-                    "training_file": "file-2",
+                    "training_files": ["file-2"],
                     "error": "Training failed"
                 }
             ],

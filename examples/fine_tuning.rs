@@ -44,14 +44,17 @@ async fn main() -> Result<()> {
     let fine_tuning_api = FineTuningApi::new(client);
 
     // Create a fine-tuning job request
+    let training_files = vec![training_file_id.clone()];
+    let validation_files = if validation_file_id != "none" {
+        Some(vec![validation_file_id.clone()])
+    } else {
+        None
+    };
+    
     let request = CreateFineTuningJobRequest {
         model: model.clone(),
-        training_file: training_file_id.clone(),
-        validation_file: if validation_file_id != "none" {
-            Some(validation_file_id.clone())
-        } else {
-            None
-        },
+        training_files,
+        validation_files,
         hyperparameters: {
             let mut params = HashMap::new();
             params.insert("n_epochs".to_string(), Value::from(3));
@@ -75,9 +78,9 @@ async fn main() -> Result<()> {
     println!("\nFine-Tuning Job Created:");
     println!("Job ID: {}", response.id);
     println!("Model: {}", response.model);
-    println!("Training File: {}", response.training_file);
-    if let Some(val_file) = &response.validation_file {
-        println!("Validation File: {}", val_file);
+    println!("Training Files: {:?}", response.training_files);
+    if let Some(val_files) = &response.validation_files {
+        println!("Validation Files: {:?}", val_files);
     }
     println!("Status: {}", response.status);
     println!("Created At: {}", response.created_at);
@@ -104,9 +107,9 @@ async fn main() -> Result<()> {
         println!("Job Details:");
         println!("Status: {}", details.status);
         println!("Model: {}", details.model);
-        println!("Training File: {}", details.training_file);
-        if let Some(val_file) = &details.validation_file {
-            println!("Validation File: {}", val_file);
+        println!("Training Files: {:?}", details.training_files);
+        if let Some(val_files) = &details.validation_files {
+            println!("Validation Files: {:?}", val_files);
         }
         println!("Created At: {}", details.created_at);
     }
