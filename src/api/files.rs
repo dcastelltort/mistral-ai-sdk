@@ -64,11 +64,16 @@ pub struct FileUploadResponse {
     pub created_at: i64,
     
     /// File status
+    #[serde(default = "default_status")]
     pub status: String,
     
     /// File status details
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
+}
+
+fn default_status() -> String {
+    "uploaded".to_string()
 }
 
 /// List files response
