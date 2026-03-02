@@ -1,0 +1,115 @@
+//! Demonstrates fine-tuning job management with Mistral AI API
+//!
+//! This example shows how to create and monitor fine-tuning jobs.
+//!
+//! Usage:
+//!   cargo run --example fine_tuning -- <model> <training_file_id> <validation_file_id>
+//!   MISTRAL_API_KEY=your_key cargo run --example fine_tuning -- "mistral-tiny" "file-train-123" "file-val-456"
+//!
+//! The example requires the MISTRAL_API_KEY environment variable to be set.
+
+use anyhow::{Context, Result};
+use mistral_ai_rs::{MistralClient, api::fine_tuning::{CreateFineTuningJobRequest, FineTuningApi}};
+use serde_json::{to_string_pretty, Value};
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    // Get API key from environment variable
+    let api_key = std::env::var("MISTRAL_API_KEY")
+        .context("Missing MISTRAL_API_KEY environment variable.\nPlease set it or create a .env file from .env.example")?;
+
+    // Get model from command line arguments
+    let model = std::env::args().nth(1)
+        .context("Usage: cargo run --example fine_tuning -- <model> <training_file_id> <validation_file_id>")?;
+
+    // Get training file ID from command line arguments
+    let training_file_id = std::env::args().nth(2)
+        .context("Usage: cargo run --example fine_tuning -- <model> <training_file_id> <validation_file_id>")?;
+
+    // Get validation file ID from command line arguments
+    let validation_file_id = std::env::args().nth(3)
+        .unwrap_or_else(|| "none".to_string()); // Validation file is optional
+
+    println!("Creating fine-tuning job for model: {}", model);
+    println!("Training file ID: {}", training_file_id);
+    if validation_file_id != "none" {
+        println!("Validation file ID: {}", validation_file_id);
+    }
+
+    // Create the Mistral client
+    let client = MistralClient::new(api_key);
+
+    // Create fine-tuning API client
+    let fine_tuning_api = FineTuningApi::new(client);
+
+    // Create a fine-tuning job request
+    let request = CreateFineTuningJobRequest {
+        model: model.clone(),
+        training_file: training_file_id.clone(),
+        validation_file: if validation_file_id != "none" {
+            Some(validation_file_id.clone())
+        } else {
+            None
+        },
+        hyperparameters: {
+            let mut params = HashMap::new();
+            params.insert("n_epochs".to_string(), Value::from(3));
+            params.insert("batch_size".to_string(), Value::from(16));
+            params.insert("learning_rate".to_string(), Value::from(0.0001));
+            Some(params)
+        },
+        suffix: Some("custom-finetune".to_string()),
+    };
+
+    // Make the API call
+    println!("Sending fine-tuning job request to Mistral AI API...");
+    let response = fine_tuning_api.create_job(&request).await
+        .context("Failed to create fine-tuning job")?;
+
+    // Pretty print the response
+    println!("\nFine-Tuning Job Creation Response:");
+    println!("{}", to_string_pretty(&response)?);
+
+    // Display key information
+    println!("\nFine-Tuning Job Created:");
+    println!("Job ID: {}", response.id);
+    println!("Model: {}", response.model);
+    println!("Training File: {}", response.training_file);
+    if let Some(val_file) = &response.validation_file {
+        println!("Validation File: {}", val_file);
+    }
+    println!("Status: {}", response.status);
+    println!("Created At: {}", response.created_at);
+
+    // List fine-tuning jobs to verify our job appears
+    println!("\nListing all fine-tuning jobs...");
+    let list_response = fine_tuning_api.list_jobs().await
+        .context("Failed to list fine-tuning jobs")?;
+
+    println!("Found {} fine-tuning jobs:", list_response.data.len());
+    for job in &list_response.data {
+        println!("- Job {}: {} (status: {}, model: {})", 
+            job.id, job.created_at, job.status, job.model);
+    }
+
+    // Get details of our specific job
+    if !list_response.data.is_empty() {
+        let job_id = &list_response.data[0].id;
+        println!("\nGetting details for job: {}", job_id);
+        
+        let details = fine_tuning_api.retrieve_job(job_id).await
+            .context("Failed to get fine-tuning job details")?;
+
+        println!("Job Details:");
+        println!("Status: {}", details.status);
+        println!("Model: {}", details.model);
+        println!("Training File: {}", details.training_file);
+        if let Some(val_file) = &details.validation_file {
+            println!("Validation File: {}", val_file);
+        }
+        println!("Created At: {}", details.created_at);
+    }
+
+    Ok(())
+}
