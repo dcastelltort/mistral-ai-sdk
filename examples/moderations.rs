@@ -6,7 +6,12 @@
 //!   cargo run --example moderations -- <text>
 //!   MISTRAL_API_KEY=your_key cargo run --example moderations -- "This is test content"
 //!
-//! The example requires the MISTRAL_API_KEY environment variable to be set.
+//! Requirements:
+//!   - MISTRAL_API_KEY environment variable with moderation scope
+//!   - Moderation API access (contact Mistral AI support if needed)
+//!
+//! Note: The moderation API requires a special API key scope.
+//! If you get a permission error, your key may not have moderation access.
 
 use anyhow::{Context, Result};
 use mistral_ai_rs::{
@@ -34,7 +39,7 @@ async fn main() -> Result<()> {
     // Create a moderation request
     let request = ModerationRequest {
         input: text,
-        model: Some("mistral-moderation-latest".to_string()),
+        model: None, // Let the API use the default moderation model
     };
 
     // Create moderations API client
@@ -42,9 +47,7 @@ async fn main() -> Result<()> {
 
     // Make the API call
     println!("Sending moderation request to Mistral AI API...");
-    let response = moderations_api
-        .create_moderation(&request)
-        .await
+    let response = moderations_api.create_moderation(&request).await
         .context("Failed to create moderation")?;
 
     // Pretty print the response
