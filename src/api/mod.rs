@@ -4,3 +4,5 @@ pub mod files;
 pub mod fine_tuning;
 pub mod batch;
 pub mod chat;
+pub mod embeddings;
+pub mod moderations;
