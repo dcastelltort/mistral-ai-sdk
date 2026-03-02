@@ -3,8 +3,13 @@
 //! This example shows how to create and manage batch processing jobs.
 //!
 //! Usage:
-//!   cargo run --example batch_job -- <input_file_id> <endpoint> <completion_window>
-//!   MISTRAL_API_KEY=your_key cargo run --example batch_job -- "file-123" "/v1/chat/completions" "24h"
+//!   cargo run --example batch_job -- [input_file_id] [endpoint] [completion_window]
+//!   MISTRAL_API_KEY=your_key cargo run --example batch_job -- "550e8400-e29b-41d4-a716-446655440000" "/v1/chat/completions" "24h"
+//!
+//! If no arguments are provided, it uses default values:
+//!   cargo run --example batch_job
+//!
+//! Note: input_file_id must be a valid UUID format.
 //!
 //! The example requires the MISTRAL_API_KEY environment variable to be set.
 
@@ -19,17 +24,17 @@ async fn main() -> Result<()> {
     let api_key = std::env::var("MISTRAL_API_KEY")
         .context("Missing MISTRAL_API_KEY environment variable.\nPlease set it or create a .env file from .env.example")?;
 
-    // Get input file ID from command line arguments
+    // Get input file ID from command line arguments, or use a default UUID
     let input_file_id = std::env::args().nth(1)
-        .context("Usage: cargo run --example batch_job -- <input_file_id> <endpoint> <completion_window>")?;
+        .unwrap_or_else(|| "550e8400-e29b-41d4-a716-446655440000".to_string());
 
-    // Get endpoint from command line arguments
+    // Get endpoint from command line arguments, or use default
     let endpoint = std::env::args().nth(2)
-        .context("Usage: cargo run --example batch_job -- <input_file_id> <endpoint> <completion_window>")?;
+        .unwrap_or_else(|| "/v1/chat/completions".to_string());
 
-    // Get completion window from command line arguments
+    // Get completion window from command line arguments, or use default
     let completion_window = std::env::args().nth(3)
-        .context("Usage: cargo run --example batch_job -- <input_file_id> <endpoint> <completion_window>")?;
+        .unwrap_or_else(|| "24h".to_string());
 
     println!("Creating batch job with file ID: {}", input_file_id);
     println!("Endpoint: {}", endpoint);
