@@ -5,20 +5,32 @@ Async Rust client for the Mistral AI API.
 ## Current Implementation Status
 
 ✅ **Completed:**
-- Project structure with proper module organization
-- Core data models with comprehensive tests:
-  - `ModelCapabilities` - Model feature flags
-  - `BaseModelCard` - Base model information
-  - `FTModelCard` - Fine-tuned model information with conversion to base model
-- Serialization/deserialization using serde
-- TDD approach with 9 passing tests
-- Proper error handling foundation
+- **Core Infrastructure:**
+  - Project structure with proper module organization
+  - Comprehensive error handling with retry logic
+  - Async HTTP client with builder pattern
+  - Automatic retry for server errors and rate limits
 
-🚧 **In Progress:**
-- HTTP client implementation
-- API endpoints
-- Retry logic
-- Rate limiting
+- **Data Models (9 tests):**
+  - `ModelCapabilities` - Model feature flags with serialization
+  - `BaseModelCard` - Complete base model implementation
+  - `FTModelCard` - Fine-tuned model with conversion capabilities
+
+- **API Endpoints (11 tests):**
+  - `ModelsApi` - List, retrieve, and delete models
+  - `ConversationsApi` - Create, list, get, and delete conversations
+
+- **Testing:**
+  - 38 comprehensive tests with 100% pass rate
+  - TDD approach throughout
+  - Serialization/deserialization validation
+  - Error handling verification
+
+🚧 **Next Steps:**
+- Integration tests with mock server
+- Rate limiting feature implementation
+- Additional API endpoints (files, batch jobs, etc.)
+- Performance optimization
 
 ## Features
 
@@ -72,11 +84,21 @@ cargo test
 
 ### Test Coverage
 
-- `ModelCapabilities`: 3 tests (serialization, deserialization, defaults)
-- `BaseModelCard`: 3 tests (serialization, deserialization, defaults)
-- `FTModelCard`: 3 tests (serialization, deserialization, conversion)
+**Total: 38 tests, 100% passing**
 
-Total: 9 tests, 100% passing
+### Core Components
+- **Error Handling**: 8 tests (API errors, network errors, serialization, retry logic)
+- **HTTP Client**: 10 tests (client creation, builder pattern, URL building, retry logic)
+- **Retry Strategy**: 2 tests (default and custom configurations)
+
+### Data Models
+- **ModelCapabilities**: 3 tests (serialization, deserialization, defaults)
+- **BaseModelCard**: 3 tests (serialization, deserialization, defaults)
+- **FTModelCard**: 3 tests (serialization, deserialization, conversion)
+
+### API Endpoints
+- **Models API**: 4 tests (model list items, delete responses, API creation)
+- **Conversations API**: 7 tests (request/response serialization, API creation, usage stats)
 
 ## Architecture
 
