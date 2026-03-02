@@ -47,10 +47,11 @@ async fn main() -> Result<()> {
     metadata.insert("created_by".to_string(), serde_json::Value::String("mistral-ai-rs-example".to_string()));
     
     let request = CreateBatchJobRequest {
-        input_file: input_file_id.clone(),
+        input_files: vec![input_file_id.clone()],
         endpoint: Some(endpoint.clone()),
         completion_window: Some(completion_window.clone()),
         metadata: Some(metadata),
+        model: None,
     };
 
     // Make the API call

@@ -48,8 +48,8 @@ pub struct BatchJob {
 /// Create batch job request
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateBatchJobRequest {
-    /// Input file ID
-    pub input_file: String,
+    /// Input file IDs (array)
+    pub input_files: Vec<String>,
     
     /// Completion window (optional)
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -62,6 +62,10 @@ pub struct CreateBatchJobRequest {
     /// Endpoint parameters (optional)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
+    
+    /// Model (optional)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
 }
 
 /// List batch jobs response
@@ -153,16 +157,17 @@ mod tests {
     #[test]
     fn test_create_batch_job_request() {
         let request = CreateBatchJobRequest {
-            input_file: "file-123".to_string(),
+            input_files: vec!["file-123".to_string()],
             completion_window: Some("24h".to_string()),
             metadata: Some(HashMap::from([
                 ("user_id".to_string(), json!("123")),
                 ("priority".to_string(), json!("high")),
             ])),
             endpoint: Some("/v1/chat/completions".to_string()),
+            model: None,
         };
         
-        assert_eq!(request.input_file, "file-123");
+        assert_eq!(request.input_files, vec!["file-123"]);
         assert_eq!(request.completion_window.as_deref(), Some("24h"));
         assert_eq!(request.endpoint.as_deref(), Some("/v1/chat/completions"));
     }
