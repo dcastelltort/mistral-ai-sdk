@@ -147,21 +147,10 @@ impl FilesApi {
             .part("file", part)
             .text("purpose", request.purpose.clone());
         
-        let response = self.client.client.post("https://api.mistral.ai/v1/files")
-            .multipart(form)
-            .send()
-            .await
-            .map_err(|e| MistralError::NetworkError(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
+        // Use the client's authenticated multipart method for proper authentication
+        let response = self.client.post_with_multipart("/v1/files", form).await?;
         
-        let status = response.status();
-        let body = response.text().await
-            .map_err(|e| MistralError::NetworkError(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
-        
-        if !status.is_success() {
-            return Err(MistralError::from_status(status, &body));
-        }
-        
-        let file_response: FileUploadResponse = serde_json::from_str(&body)?;
+        let file_response: FileUploadResponse = serde_json::from_str(&response)?;
         Ok(file_response)
     }
     

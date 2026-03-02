@@ -148,6 +148,36 @@ impl MistralClient {
     fn should_retry(&self, error: &Option<crate::error::MistralError>) -> bool {
         error.as_ref().map_or(false, |err| err.is_retryable())
     }
+
+    /// Execute multipart request (no retries since multipart can't be cloned)
+    pub async fn execute_multipart(&self, request_builder: reqwest::RequestBuilder) -> Result<String, crate::error::MistralError> {
+        // Apply rate limiting if enabled
+        #[cfg(feature = "rate-limiting")]
+        if let Some(limiter) = &self.rate_limiter {
+            // Wait for available permit
+            let _ = limiter.acquire().await;
+        }
+        
+        let response = request_builder.send().await?;
+        
+        let status = response.status();
+        let body = response.text().await?;
+        
+        if !status.is_success() {
+            return Err(crate::error::MistralError::from_status(status, &body));
+        }
+        
+        Ok(body)
+    }
+
+    /// Perform a POST request with multipart form data
+    pub async fn post_with_multipart(&self, path: &str, form: reqwest::multipart::Form) -> Result<String, crate::error::MistralError> {
+        let url = self.build_url(path, None);
+        let request_builder = self.client.post(&url).multipart(form);
+        let request_builder = self.add_authentication(request_builder);
+        
+        self.execute_multipart(request_builder).await
+    }
 }
 
 #[cfg(test)]
@@ -197,6 +227,5 @@ mod tests {
         let url = client.build_url("/v1/models", None);
         assert_eq!(url, "https://api.mistral.ai/v1/models");
     }
-
 
 }

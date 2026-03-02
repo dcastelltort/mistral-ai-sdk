@@ -32,7 +32,7 @@ pub struct DeleteModelResponse {
 }
 
 /// Models API client
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ModelsApi {
     client: MistralClient,
 }

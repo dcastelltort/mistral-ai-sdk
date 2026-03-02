@@ -104,7 +104,7 @@ pub struct ConversationSummary {
 }
 
 /// Conversations API client
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ConversationsApi {
     client: MistralClient,
 }
