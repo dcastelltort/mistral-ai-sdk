@@ -178,7 +178,11 @@ Shows how to create and manage fine-tuning jobs.
 
 **Usage:**
 ```bash
-cargo run --example fine_tuning -- "mistral-tiny" "file-train-123" "file-val-456"
+# Using a model that supports fine-tuning
+cargo run --example fine_tuning -- "open-mistral-nemo" "file-train-123" "file-val-456"
+
+# Or with a medium model
+cargo run --example fine_tuning -- "mistral-medium-latest" "file-train-123" "file-val-456"
 ```
 
 **Features:**
@@ -187,8 +191,14 @@ cargo run --example fine_tuning -- "mistral-tiny" "file-train-123" "file-val-456
 - Hyperparameter configuration (n_epochs, batch_size, learning_rate)
 - Job monitoring and retrieval
 - Automatic model suffix generation
+- Automatic UUID validation and conversion
 
-**Note:** File IDs must be valid UUIDs. The API will validate UUID format.
+**Supported Models:**
+- `open-mistral-nemo` (and aliases: `mistral-tiny-latest`, `mistral-tiny-2407`)
+- `mistral-medium-latest` (and aliases: `mistral-medium`, `mistral-medium-2508`)
+- `mistral-large-2411`
+
+**Note:** File IDs must be valid UUIDs. The example automatically converts invalid formats like "file-train-123" to proper UUIDs.
 
 ### 7. Conversations
 
@@ -211,6 +221,7 @@ Shows how to list available models and retrieve model details.
 
 **Usage:**
 ```bash
+# List all models to find fine-tuning capable ones
 cargo run --example models_list
 ```
 
@@ -219,6 +230,14 @@ cargo run --example models_list
 - Model details retrieval
 - Capabilities analysis (vision, function calling, fine-tuning, etc.)
 - Base and fine-tuned model support
+- Identify models that support fine-tuning (`"fine_tuning": true`)
+
+**Finding Fine-Tuning Models:**
+Run this example to see which models have `"fine_tuning": true` in their capabilities.
+Current fine-tuning capable models include:
+- `open-mistral-nemo` and its aliases
+- `mistral-medium-latest` and its aliases  
+- `mistral-large-2411`
 
 ## Running Examples
 
