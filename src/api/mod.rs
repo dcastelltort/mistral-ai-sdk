@@ -6,3 +6,4 @@ pub mod batch;
 pub mod chat;
 pub mod embeddings;
 pub mod moderations;
+pub mod fim;
