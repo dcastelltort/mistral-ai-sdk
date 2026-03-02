@@ -1,4 +1,6 @@
 use crate::client::{MistralClient, RetryStrategy};
+#[cfg(feature = "rate-limiting")]
+use crate::client::RateLimiter;
 use std::time::Duration;
 
 /// Builder for MistralClient with configurable options
@@ -7,6 +9,8 @@ pub struct MistralClientBuilder {
     api_key: Option<String>,
     base_url: Option<String>,
     retry_strategy: RetryStrategy,
+    #[cfg(feature = "rate-limiting")]
+    rate_limiter: Option<RateLimiter>,
 }
 
 impl MistralClientBuilder {
@@ -45,6 +49,20 @@ impl MistralClientBuilder {
         self
     }
     
+    /// Configure rate limiter
+    #[cfg(feature = "rate-limiting")]
+    pub fn rate_limiter(mut self, rate_limiter: RateLimiter) -> Self {
+        self.rate_limiter = Some(rate_limiter);
+        self
+    }
+    
+    /// Configure rate limiting with capacity and refill rate
+    #[cfg(feature = "rate-limiting")]
+    pub fn with_rate_limiting(mut self, capacity: usize, refill_rate: f64) -> Self {
+        self.rate_limiter = Some(RateLimiter::new(capacity, refill_rate));
+        self
+    }
+    
     /// Build the MistralClient
     pub fn build(self) -> Result<MistralClient, crate::error::MistralError> {
         let api_key = self.api_key.ok_or_else(|| {
@@ -56,6 +74,8 @@ impl MistralClientBuilder {
             base_url: self.base_url.unwrap_or_else(|| "https://api.mistral.ai".to_string()),
             retry_strategy: self.retry_strategy,
             client: reqwest::Client::new(),
+            #[cfg(feature = "rate-limiting")]
+            rate_limiter: self.rate_limiter,
         })
     }
 }
@@ -114,5 +134,37 @@ mod tests {
         let client = result.unwrap();
         assert_eq!(client.api_key, "test-key");
         assert_eq!(client.base_url, "https://custom.api");
+    }
+    
+    #[cfg(feature = "rate-limiting")]
+    #[test]
+    fn test_build_with_rate_limiting() {
+        let builder = MistralClientBuilder::new()
+            .api_key("test-key")
+            .with_rate_limiting(10, 5.0);
+        
+        let result = builder.build();
+        assert!(result.is_ok());
+        
+        let client = result.unwrap();
+        assert_eq!(client.api_key, "test-key");
+        assert!(client.rate_limiter.is_some());
+        assert_eq!(client.rate_limiter.as_ref().unwrap().capacity(), 10);
+    }
+    
+    #[cfg(feature = "rate-limiting")]
+    #[test]
+    fn test_build_with_custom_rate_limiter() {
+        let limiter = RateLimiter::new(5, 2.0);
+        let builder = MistralClientBuilder::new()
+            .api_key("test-key")
+            .rate_limiter(limiter);
+        
+        let result = builder.build();
+        assert!(result.is_ok());
+        
+        let client = result.unwrap();
+        assert!(client.rate_limiter.is_some());
+        assert_eq!(client.rate_limiter.as_ref().unwrap().refill_rate(), 2.0);
     }
 }

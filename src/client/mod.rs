@@ -1,13 +1,17 @@
 pub mod builder;
 pub mod retry;
+#[cfg(feature = "rate-limiting")]
+pub mod rate_limiter;
 
 use builder::MistralClientBuilder;
 use retry::RetryStrategy;
+#[cfg(feature = "rate-limiting")]
+use rate_limiter::RateLimiter;
 use reqwest::Client;
 use reqwest::header::AUTHORIZATION;
 
 /// HTTP client for Mistral AI API
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct MistralClient {
     /// API key for authentication
     pub api_key: String,
@@ -20,6 +24,10 @@ pub struct MistralClient {
     
     /// Inner HTTP client
     client: Client,
+    
+    /// Optional rate limiter
+    #[cfg(feature = "rate-limiting")]
+    pub rate_limiter: Option<RateLimiter>,
 }
 
 impl MistralClient {
@@ -30,6 +38,8 @@ impl MistralClient {
             base_url: "https://api.mistral.ai".to_string(),
             retry_strategy: RetryStrategy::default(),
             client: Client::new(),
+            #[cfg(feature = "rate-limiting")]
+            rate_limiter: None,
         }
     }
     
@@ -89,11 +99,18 @@ impl MistralClient {
         request_builder.header(AUTHORIZATION, auth_value)
     }
     
-    /// Execute request with retry logic
+    /// Execute request with retry logic and rate limiting
     async fn execute_with_retry(&self, request_builder: reqwest::RequestBuilder) -> Result<String, crate::error::MistralError> {
         let mut last_error = None;
         
         for attempt in 0..=self.retry_strategy.max_retries {
+            // Apply rate limiting if enabled
+            #[cfg(feature = "rate-limiting")]
+            if let Some(limiter) = &self.rate_limiter {
+                // Wait for available permit
+                let _ = limiter.acquire().await;
+            }
+            
             match self.execute_request(request_builder.try_clone().unwrap()).await {
                 Ok(response) => return Ok(response),
                 Err(err) => {
