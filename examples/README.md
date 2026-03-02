@@ -84,6 +84,66 @@ cargo run --example file_upload -- "data.txt" "fine-tune"
 - File validation
 - Upload progress tracking
 
+### 5. Batch Processing
+
+Demonstrates batch job creation and management.
+
+**Usage:**
+```bash
+cargo run --example batch_job -- "file-123" "/v1/chat/completions" "24h"
+```
+
+**Features:**
+- Batch job creation with input files
+- Completion window configuration
+- Job listing and status monitoring
+- Metadata support
+
+### 6. Fine-Tuning
+
+Shows how to create and manage fine-tuning jobs.
+
+**Usage:**
+```bash
+cargo run --example fine_tuning -- "mistral-tiny" "file-train-123" "file-val-456"
+```
+
+**Features:**
+- Fine-tuning job creation
+- Training and validation file specification
+- Hyperparameter configuration
+- Job monitoring and retrieval
+
+### 7. Conversations
+
+Demonstrates conversation management with the Mistral AI API.
+
+**Usage:**
+```bash
+cargo run --example conversations -- "Hello, let's chat!"
+```
+
+**Features:**
+- Conversation creation with initial messages
+- Conversation listing
+- Individual conversation retrieval
+- Message history management
+
+### 8. Model Listing
+
+Shows how to list available models and retrieve model details.
+
+**Usage:**
+```bash
+cargo run --example models_list
+```
+
+**Features:**
+- List all available models
+- Model details retrieval
+- Capabilities analysis (vision, function calling, fine-tuning, etc.)
+- Base and fine-tuned model support
+
 ## Running Examples
 
 All examples require the `MISTRAL_API_KEY` environment variable:
