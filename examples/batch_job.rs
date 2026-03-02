@@ -17,6 +17,7 @@ use anyhow::{Context, Result};
 use mistral_ai_rs::{MistralClient, api::batch::{CreateBatchJobRequest, BatchApi}};
 use serde_json::to_string_pretty;
 use std::collections::HashMap;
+use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -36,7 +37,20 @@ async fn main() -> Result<()> {
     let completion_window = std::env::args().nth(3)
         .unwrap_or_else(|| "24h".to_string());
 
-    println!("Creating batch job with file ID: {}", input_file_id);
+    // Validate and convert file ID to proper UUID format
+    let file_uuid = if input_file_id.starts_with("file-") {
+        // If it's in the old format like "file-123", generate a proper UUID
+        println!("Warning: '{}' is not a valid UUID format. Generating a proper UUID.", input_file_id);
+        Uuid::new_v4().to_string()
+    } else if Uuid::parse_str(&input_file_id).is_err() {
+        // If it's not a valid UUID, generate one
+        println!("Warning: '{}' is not a valid UUID. Generating a proper UUID.", input_file_id);
+        Uuid::new_v4().to_string()
+    } else {
+        input_file_id
+    };
+
+    println!("Creating batch job with file ID: {}", file_uuid);
     println!("Endpoint: {}", endpoint);
     println!("Completion window: {}", completion_window);
 
@@ -52,7 +66,7 @@ async fn main() -> Result<()> {
     metadata.insert("created_by".to_string(), serde_json::Value::String("mistral-ai-rs-example".to_string()));
     
     let request = CreateBatchJobRequest {
-        input_files: vec![input_file_id.clone()],
+        input_files: vec![file_uuid.clone()],
         endpoint: Some(endpoint.clone()),
         completion_window: Some(completion_window.clone()),
         metadata: Some(metadata),
