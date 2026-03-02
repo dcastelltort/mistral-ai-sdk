@@ -70,7 +70,7 @@ async fn main() -> Result<()> {
         endpoint: Some(endpoint.clone()),
         completion_window: Some(completion_window.clone()),
         metadata: Some(metadata),
-        model: None,
+        model: Some("mistral-small-latest".to_string()), // Add default model
     };
 
     // Make the API call
