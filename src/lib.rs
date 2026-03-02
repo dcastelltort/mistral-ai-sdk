@@ -20,4 +20,4 @@ pub mod api;
 
 pub use error::MistralError;
 pub use client::MistralClient;
-pub use models::{ModelCapabilities, BaseModelCard};
+pub use models::{ModelCapabilities, BaseModelCard, FTModelCard};
