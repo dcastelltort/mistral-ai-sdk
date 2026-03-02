@@ -8,3 +8,4 @@ pub mod embeddings;
 pub mod moderations;
 pub mod fim;
 pub mod ocr;
+pub mod audio;
