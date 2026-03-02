@@ -23,7 +23,7 @@ pub struct MistralClient {
     pub retry_strategy: RetryStrategy,
     
     /// Inner HTTP client
-    client: Client,
+    pub client: Client,
     
     /// Optional rate limiter
     #[cfg(feature = "rate-limiting")]
