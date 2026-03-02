@@ -23,6 +23,64 @@ Then edit `.env` and set your API key:
 MISTRAL_API_KEY=your_api_key_here
 ```
 
+## Newly Implemented APIs
+
+The following APIs have been recently implemented and are available for use:
+
+### FIM (Fill-in-the-Middle)
+
+Demonstrates fill-in-the-middle text generation.
+
+**Example Usage:**
+```rust
+use mistral_ai_rs::api::fim::{FIMCompletionRequest, FIMMessage, FIMApi};
+
+let request = FIMCompletionRequest {
+    model: "mistral-tiny".to_string(),
+    messages: vec![
+        FIMMessage {
+            role: "user".to_string(),
+            content: "Hello, world! This is a "
+        }
+    ],
+    suffix: Some(" test.".to_string()),
+    max_tokens: Some(50),
+    temperature: Some(0.7),
+};
+```
+
+### OCR (Optical Character Recognition)
+
+Shows how to perform OCR on documents and images.
+
+**Example Usage:**
+```rust
+use mistral_ai_rs::api::ocr::{OCRRequest, OCRApi};
+
+let request = OCRRequest {
+    file_id: Some("file-123".to_string()),
+    document_url: None,
+    image_url: None,
+    language: Some("en".to_string()),
+};
+```
+
+### Audio Transcription
+
+Demonstrates audio file transcription.
+
+**Example Usage:**
+```rust
+use mistral_ai_rs::api::audio::{AudioTranscriptionRequest, AudioApi};
+
+let request = AudioTranscriptionRequest {
+    file_id: Some("file-123".to_string()),
+    file_url: None,
+    language: Some("en".to_string()),
+    timestamp_granularities: Some(vec!["word".to_string(), "segment".to_string()]),
+};
+```
+
 ## Available Examples
 
 ### 1. Chat Completion
@@ -75,14 +133,21 @@ Shows how to upload files to the Mistral AI platform.
 
 **Usage:**
 ```bash
+# With custom file and purpose
 cargo run --example file_upload -- "data.txt" "fine-tune"
+
+# Using default example file
+cargo run --example file_upload
 ```
 
 **Features:**
 - File upload with purpose specification
 - Supported purposes: `fine-tune`, `batch`
-- File validation
+- Automatic UUID validation and conversion
+- File validation and error handling
 - Upload progress tracking
+
+**Note:** File must be in newline-delimited JSON format for fine-tuning.
 
 ### 5. Batch Processing
 
@@ -90,14 +155,22 @@ Demonstrates batch job creation and management.
 
 **Usage:**
 ```bash
+# With custom parameters
 cargo run --example batch_job -- "file-123" "/v1/chat/completions" "24h"
+
+# Using default values (auto-generates valid UUID)
+cargo run --example batch_job
 ```
 
 **Features:**
 - Batch job creation with input files
+- Automatic UUID validation and conversion
 - Completion window configuration
 - Job listing and status monitoring
 - Metadata support
+- Default model selection
+
+**Note:** File IDs must be valid UUIDs. The example automatically converts invalid formats.
 
 ### 6. Fine-Tuning
 
@@ -109,10 +182,13 @@ cargo run --example fine_tuning -- "mistral-tiny" "file-train-123" "file-val-456
 ```
 
 **Features:**
-- Fine-tuning job creation
-- Training and validation file specification
-- Hyperparameter configuration
+- Fine-tuning job creation with array-based file specification
+- Training and validation files (arrays)
+- Hyperparameter configuration (n_epochs, batch_size, learning_rate)
 - Job monitoring and retrieval
+- Automatic model suffix generation
+
+**Note:** File IDs must be valid UUIDs. The API will validate UUID format.
 
 ### 7. Conversations
 
@@ -201,6 +277,18 @@ Solution: Check the example's usage instructions
 ```
 Error: Failed to connect to Mistral AI API
 Solution: Check your internet connection and API key validity
+```
+
+**UUID Validation Errors:**
+```
+Error: Input should be a valid UUID
+Solution: Use proper UUID format (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) or let the example auto-convert
+```
+
+**File Not Found Errors:**
+```
+Error: File XXX not found
+Solution: Ensure the file ID exists and was uploaded successfully
 ```
 
 ## Contributing
