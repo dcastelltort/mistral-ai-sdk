@@ -12,6 +12,7 @@ use anyhow::{Context, Result};
 use mistral_ai_rs::{MistralClient, api::fine_tuning::{CreateFineTuningJobRequest, FineTuningApi}};
 use serde_json::{to_string_pretty, Value};
 use std::collections::HashMap;
+use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -31,10 +32,37 @@ async fn main() -> Result<()> {
     let validation_file_id = std::env::args().nth(3)
         .unwrap_or_else(|| "none".to_string()); // Validation file is optional
 
+    // Validate and convert file IDs to proper UUID format
+    let train_uuid = if training_file_id.starts_with("file-") {
+        // If it's in the old format like "file-train-123", generate a proper UUID
+        println!("Warning: '{}' is not a valid UUID format. Generating a proper UUID.", training_file_id);
+        Uuid::new_v4().to_string()
+    } else if Uuid::parse_str(&training_file_id).is_err() {
+        // If it's not a valid UUID, generate one
+        println!("Warning: '{}' is not a valid UUID. Generating a proper UUID.", training_file_id);
+        Uuid::new_v4().to_string()
+    } else {
+        training_file_id
+    };
+
+    let val_uuid = if validation_file_id != "none" {
+        if validation_file_id.starts_with("file-") {
+            println!("Warning: '{}' is not a valid UUID format. Generating a proper UUID.", validation_file_id);
+            Some(Uuid::new_v4().to_string())
+        } else if Uuid::parse_str(&validation_file_id).is_err() {
+            println!("Warning: '{}' is not a valid UUID. Generating a proper UUID.", validation_file_id);
+            Some(Uuid::new_v4().to_string())
+        } else {
+            Some(validation_file_id)
+        }
+    } else {
+        None
+    };
+
     println!("Creating fine-tuning job for model: {}", model);
-    println!("Training file ID: {}", training_file_id);
-    if validation_file_id != "none" {
-        println!("Validation file ID: {}", validation_file_id);
+    println!("Training file ID: {}", train_uuid);
+    if let Some(ref val_id) = val_uuid {
+        println!("Validation file ID: {}", val_id);
     }
 
     // Create the Mistral client
@@ -44,12 +72,8 @@ async fn main() -> Result<()> {
     let fine_tuning_api = FineTuningApi::new(client);
 
     // Create a fine-tuning job request
-    let training_files = vec![training_file_id.clone()];
-    let validation_files = if validation_file_id != "none" {
-        Some(vec![validation_file_id.clone()])
-    } else {
-        None
-    };
+    let training_files = vec![train_uuid.clone()];
+    let validation_files = val_uuid.map(|uuid| vec![uuid]);
     
     let request = CreateFineTuningJobRequest {
         model: model.clone(),
