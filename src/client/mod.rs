@@ -75,6 +75,24 @@ impl MistralClient {
         self.execute_with_retry(request_builder).await
     }
     
+    /// Perform a PUT request
+    pub async fn put<T: serde::Serialize>(&self, path: &str, body: &T) -> Result<String, crate::error::MistralError> {
+        let url = self.build_url(path, None);
+        let request_builder = self.client.put(&url).json(body);
+        let request_builder = self.add_authentication(request_builder);
+        
+        self.execute_with_retry(request_builder).await
+    }
+    
+    /// Perform a PATCH request
+    pub async fn patch<T: serde::Serialize>(&self, path: &str, body: &T) -> Result<String, crate::error::MistralError> {
+        let url = self.build_url(path, None);
+        let request_builder = self.client.patch(&url).json(body);
+        let request_builder = self.add_authentication(request_builder);
+        
+        self.execute_with_retry(request_builder).await
+    }
+    
     /// Build full URL from path and query parameters
     fn build_url(&self, path: &str, query_params: Option<&[(&str, &str)]>) -> String {
         let mut url = format!("{}{}", self.base_url, path);
@@ -177,6 +195,15 @@ impl MistralClient {
         let request_builder = self.add_authentication(request_builder);
         
         self.execute_multipart(request_builder).await
+    }
+    
+    /// Perform a PUT request with query parameters
+    pub async fn put_with_params(&self, path: &str, params: &[(&str, &str)]) -> Result<String, crate::error::MistralError> {
+        let url = self.build_url(path, Some(params));
+        let request_builder = self.client.put(&url);
+        let request_builder = self.add_authentication(request_builder);
+        
+        self.execute_with_retry(request_builder).await
     }
 }
 
