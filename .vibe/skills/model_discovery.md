@@ -1,7 +1,7 @@
 # Model Discovery Skill (Repository-Specific)
 
 ## Scope
-ONLY applies to: /Users/damiencastelltort/vibe_playground
+ONLY applies to current repository
 
 ## Purpose
 Teach users how to use the models_list example to discover available models, their capabilities, and proper usage patterns for troubleshooting API issues.

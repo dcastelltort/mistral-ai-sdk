@@ -1,7 +1,7 @@
 # Git Commit Enforcement (Repository-Specific)
 
 ## Scope
-ONLY applies to: /Users/damiencastelltort/vibe_playground
+ONLY applies to current repository
 
 ## Purpose
 Ensure all code changes in this repository are properly committed when requested.
