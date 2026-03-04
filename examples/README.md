@@ -31,38 +31,64 @@ The following APIs have been recently implemented and are available for use:
 
 Demonstrates fill-in-the-middle text generation.
 
+**Important API Update:** The FIM API has been completely restructured to match the official Mistral API specification. The old `messages[]` structure has been replaced with a `prompt`/`suffix` approach.
+
 **Example Usage:**
 ```rust
-use mistral_ai_rs::api::fim::{FIMCompletionRequest, FIMMessage, FIMApi};
+use mistral_ai_rs::api::fim::{FIMCompletionRequest, FIMApi};
 
 let request = FIMCompletionRequest {
-    model: "mistral-tiny".to_string(),
-    messages: vec![
-        FIMMessage {
-            role: "user".to_string(),
-            content: "Hello, world! This is a "
-        }
-    ],
-    suffix: Some(" test.".to_string()),
-    max_tokens: Some(50),
-    temperature: Some(0.7),
+    model: "codestral-latest".to_string(),
+    prompt: "def add_numbers(a: int, b: int) -> int:".to_string(),
+    suffix: Some("    return a + b".to_string()), // Optional suffix
+    temperature: Some(0.2),
+    max_tokens: Some(200),
 };
+```
+
+**Key Changes:**
+- ✅ Replaced `messages: Vec<FIMMessage>` with `prompt: String`
+- ✅ Added optional `suffix: String` for FIM context
+- ✅ Removed `FIMMessage` struct (not used by API)
+- ✅ Updated to match official OpenAPI specification
+- ✅ All tests updated and passing
+
+**Usage:**
+```bash
+cargo run --example fim_completion -- <prompt>
 ```
 
 ### OCR (Optical Character Recognition)
 
 Shows how to perform OCR on documents and images.
 
+**Available OCR Models:**
+- `mistral-ocr-latest` (recommended)
+- `mistral-ocr-2512`
+- `mistral-ocr-2505`
+- `mistral-ocr-2503` (deprecated)
+
 **Example Usage:**
 ```rust
-use mistral_ai_rs::api::ocr::{OCRRequest, OCRApi};
+use mistral_ai_rs::api::ocr::{OCRRequest, OCRApi, OCRDocument, DocumentURLChunk};
 
 let request = OCRRequest {
-    file_id: Some("file-123".to_string()),
-    document_url: None,
-    image_url: None,
-    language: Some("en".to_string()),
+    model: Some("mistral-ocr-latest".to_string()),
+    id: Some("example-ocr-job".to_string()),
+    document: OCRDocument::DocumentURL(DocumentURLChunk {
+        type_field: "document_url".to_string(),
+        document_url: "https://example.com/document.pdf".to_string(),
+        document_name: Some("example_document.pdf".to_string()),
+    }),
+    pages: Some(vec![0, 1]), // Process first 2 pages
+    include_image_base64: Some(false),
+    image_limit: Some(5),
 };
+```
+
+**Usage:**
+```bash
+cargo run --example ocr_document -- <document_url>
 ```
 
 ### Audio Transcription
@@ -216,9 +242,17 @@ cargo run --example conversations -- "Hello, let's chat!"
 - Message history management
 - Proper input entry serialization with entry types
 
-**Note:** The conversations API has recently been updated with a new input format. The example demonstrates the correct structure using `InputEntry` with proper entry types (`message.input`, `message.output`, etc.).
+**Note:** The conversations API uses a specific input format. The example demonstrates the correct structure:
 
-**Current Limitation:** There appears to be a temporary issue with the Mistral API where it requires the `id` field for input entries but also rejects user-provided IDs. This is likely a transient API issue that will be resolved. The example code correctly implements the OpenAPI specification.
+- User-provided input entries should NOT include IDs (the API generates them automatically)
+- Either `model` or `agent_id` must be specified (they are mutually exclusive)
+- The example uses `model: "mistral-medium-latest"` for model-based conversations
+
+**Fixed Issues:**
+- ✅ Resolved ID field conflicts with API validation
+- ✅ Proper model specification
+- ✅ Correct request serialization
+- ✅ Example now works with the current API
 
 ## Newly Implemented APIs
 
