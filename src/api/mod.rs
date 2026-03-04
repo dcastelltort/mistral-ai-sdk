@@ -8,6 +8,7 @@ pub mod embeddings;
 pub mod files;
 pub mod fim;
 pub mod fine_tuning;
+pub mod libraries;
 pub mod models;
 pub mod moderations;
 pub mod ocr;
