@@ -220,7 +220,139 @@ cargo run --example conversations -- "Hello, let's chat!"
 
 **Current Limitation:** There appears to be a temporary issue with the Mistral API where it requires the `id` field for input entries but also rejects user-provided IDs. This is likely a transient API issue that will be resolved. The example code correctly implements the OpenAPI specification.
 
-### 8. Model Listing
+## Newly Implemented APIs
+
+The following APIs have been recently implemented and are available for use:
+
+### FIM (Fill-in-the-Middle)
+
+Demonstrates fill-in-the-middle text generation.
+
+**Example Usage:**
+```rust
+use mistral_ai_rs::api::fim::{FIMCompletionRequest, FIMMessage, FIMApi};
+
+let request = FIMCompletionRequest {
+    model: "mistral-tiny".to_string(),
+    messages: vec![
+        FIMMessage {
+            role: "user".to_string(),
+            content: "Hello, world! This is a "
+        }
+    ],
+    suffix: Some(" test.".to_string()),
+    max_tokens: Some(50),
+    temperature: Some(0.7),
+};
+```
+
+### OCR (Optical Character Recognition)
+
+Shows how to perform OCR on documents and images.
+
+**Example Usage:**
+```rust
+use mistral_ai_rs::api::ocr::{OCRRequest, OCRApi};
+
+let request = OCRRequest {
+    file_id: Some("file-123".to_string()),
+    document_url: None,
+    image_url: None,
+    language: Some("en".to_string()),
+};
+```
+
+### Audio Transcription
+
+Demonstrates audio file transcription.
+
+**Example Usage:**
+```rust
+use mistral_ai_rs::api::audio::{AudioTranscriptionRequest, AudioApi};
+
+let request = AudioTranscriptionRequest {
+    file_id: Some("file-123".to_string()),
+    file_url: None,
+    language: Some("en".to_string()),
+    timestamp_granularities: Some(vec!["word".to_string(), "segment".to_string()]),
+};
+```
+
+### 8. Agent Management
+
+Demonstrates agent creation and management with the Mistral AI API.
+
+**Usage:**
+```bash
+cargo run --example agent_management
+```
+
+**Features:**
+- Agent creation with custom tools and completion parameters
+- Agent listing and retrieval
+- Agent version management
+- Agent alias creation and management
+- Agent updating and deletion
+- Comprehensive error handling
+
+**Agent Tools Supported:**
+- Web search (standard and premium)
+- Code interpreter
+- Image generation
+- Function tools with custom parameters
+- Document library integration
+
+### 9. Text Classification
+
+Demonstrates content moderation and safety classification.
+
+**Usage:**
+```bash
+cargo run --example text_classification
+```
+
+**Features:**
+- Single and batch text classification
+- Chat message classification
+- Multi-category safety scoring
+- Custom threshold analysis
+- Metadata support
+- Moderation workflows
+
+**Classification Categories:**
+- Hate speech detection
+- Harassment detection
+- Violence detection
+- Sexual content detection
+- Self-harm detection
+- Sexual/minors detection
+
+### 10. Document Library
+
+Demonstrates document library management for RAG applications.
+
+**Usage:**
+```bash
+cargo run --example document_library
+```
+
+**Features:**
+- Library creation and management
+- Document upload and processing
+- Document text content retrieval
+- Chunked document processing
+- Document status monitoring
+- Library sharing and collaboration
+- Signed URL generation for secure access
+
+**RAG Workflow Support:**
+- Custom chunk sizes for optimal retrieval
+- Metadata preservation and search
+- Document reprocessing
+- Progress tracking
+- Secure document access via signed URLs
+
+### 11. Model Listing
 
 Shows how to list available models and retrieve model details.
 
