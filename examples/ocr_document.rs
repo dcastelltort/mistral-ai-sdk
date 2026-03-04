@@ -20,13 +20,11 @@ async fn main() -> Result<()> {
 
     // Get document URL from command line arguments
     let document_url = std::env::args().nth(1)
-        .context("Usage: cargo run --example ocr_document -- <document_url> <output_format>")?;
-
-    // Get output format from command line arguments (optional)
-    let output_format = std::env::args().nth(2).unwrap_or_else(|| "markdown".to_string());
+        .context("Usage: cargo run --example ocr_document -- <document_url>")?;
 
     println!("Performing OCR on document: {}", document_url);
-    println!("Output format: {}", output_format);
+    // Note: OCR API returns results in its standard format
+    // The response_format parameter has been removed as it's not supported by the API
 
     // Create the Mistral client
     let client = MistralClient::new(api_key);
@@ -36,7 +34,7 @@ async fn main() -> Result<()> {
 
     // Create an OCR request with document URL
     let request = OCRRequest {
-        model: Some("ocr-model-latest".to_string()),
+        model: Some("mistral-ocr-latest".to_string()), // Use the latest OCR model
         id: Some("example-ocr-job".to_string()),
         document: OCRDocument::DocumentURL(DocumentURLChunk {
             type_field: "document_url".to_string(),
@@ -46,7 +44,8 @@ async fn main() -> Result<()> {
         pages: Some(vec![0, 1]), // Process first 2 pages
         include_image_base64: Some(false),
         image_limit: Some(5),
-        response_format: Some(output_format),
+        // Note: response_format is not supported by the OCR API
+        // The API returns results in its standard format
     };
 
     // Make the API call

@@ -27,10 +27,6 @@ pub struct OCRRequest {
     /// Image limit (optional)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub image_limit: Option<i32>,
-    
-    /// Response format (optional)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub response_format: Option<String>,
 }
 
 /// OCR document source
@@ -214,7 +210,6 @@ mod tests {
             pages: Some(vec![0, 1, 2]),
             include_image_base64: Some(true),
             image_limit: Some(10),
-            response_format: Some("markdown".to_string()),
         };
 
         let json = serde_json::to_string(&request).unwrap();
