@@ -2,7 +2,7 @@
 name = "mistral-ai-sdk"
 version = "0.1.0"
 edition = "2021"
-authors = ["Mistral Vibe <vibe@mistral.ai>"]
+authors = ["Mistral Vibe <vibe@mistral.ai>", "Damien Castelltort <damien@castelltort.com>"]
 description = "Async Rust SDK for Mistral AI API"
 license = "Apache-2.0"
 repository = "https://github.com/mistralai/mistral-ai-sdk"
