@@ -6,10 +6,10 @@
 //!   cargo run --example batch_job -- [input_file_id] [endpoint] [completion_window]
 //!   MISTRAL_API_KEY=your_key cargo run --example batch_job -- "550e8400-e29b-41d4-a716-446655440000" "/v1/chat/completions" "24h"
 //!
-//! If no arguments are provided, it uses default values:
+//! If no arguments are provided, it generates a random UUID and uses defaults:
 //!   cargo run --example batch_job
 //!
-//! Note: input_file_id must be a valid UUID format.
+//! Note: input_file_id must be a valid UUID format. If not provided, a random UUID is generated.
 //!
 //! The example requires the MISTRAL_API_KEY environment variable to be set.
 
@@ -25,9 +25,9 @@ async fn main() -> Result<()> {
     let api_key = std::env::var("MISTRAL_API_KEY")
         .context("Missing MISTRAL_API_KEY environment variable.\nPlease set it or create a .env file from .env.example")?;
 
-    // Get input file ID from command line arguments, or use a default UUID
+    // Get input file ID from command line arguments, or generate a default UUID
     let input_file_id = std::env::args().nth(1)
-        .unwrap_or_else(|| "550e8400-e29b-41d4-a716-446655440000".to_string());
+        .unwrap_or_else(|| Uuid::new_v4().to_string());
 
     // Get endpoint from command line arguments, or use default
     let endpoint = std::env::args().nth(2)
