@@ -25,7 +25,7 @@ thiserror = "1.0"
 anyhow = "1.0" # For examples
 
 # UUID generation
-uuid = { version = "1.0", features = ["v4"] }
+uuid = { version = "1.4", features = ["v4"] }
 
 # Rate limiting (optional feature)
 tokio-rate-limit = { version = "0.3", optional = true }

@@ -79,14 +79,15 @@ pub struct ListLibraryOut {
     pub data: Vec<LibraryOut>,
     
     /// Pagination information
+    #[serde(default)]
     pub has_more: bool,
 }
 
 /// Document upload request
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DocumentUploadRequest {
-    /// Document URL
-    pub url: String,
+    /// Document file (URL or base64 encoded content)
+    pub file: String,
     
     /// Document metadata
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -195,11 +196,18 @@ pub struct SignedUrlResponse {
 /// Share library request
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ShareLibraryRequest {
-    /// User IDs to share with
-    pub user_ids: Vec<String>,
+    /// Organization ID (optional)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub org_id: Option<String>,
     
-    /// Permission level
-    pub permission: String,
+    /// Access level (Viewer or Editor)
+    pub level: String,
+    
+    /// UUID of the entity to share with
+    pub share_with_uuid: String,
+    
+    /// Type of entity (User, Workspace, or Org)
+    pub share_with_type: String,
 }
 
 /// Libraries API client
@@ -239,7 +247,7 @@ impl LibrariesApi {
     /// Update a library
     pub async fn update_library(&self, library_id: &str, request: &LibraryInUpdate) -> Result<LibraryOut, MistralError> {
         let path = format!("/v1/libraries/{}", library_id);
-        let response = self.client.patch(&path, request).await?;
+        let response = self.client.put(&path, request).await?;
         let library: LibraryOut = serde_json::from_str(&response)?;
         Ok(library)
     }
@@ -318,7 +326,7 @@ impl LibrariesApi {
     /// Share a library
     pub async fn share_library(&self, library_id: &str, request: &ShareLibraryRequest) -> Result<(), MistralError> {
         let path = format!("/v1/libraries/{}/share", library_id);
-        self.client.post(&path, request).await?;
+        self.client.put(&path, request).await?;
         Ok(())
     }
     
@@ -374,7 +382,7 @@ mod tests {
     #[test]
     fn test_document_upload_request_serialization() {
         let request = DocumentUploadRequest {
-            url: "https://example.com/document.pdf".to_string(),
+            file: "https://example.com/document.pdf".to_string(),
             metadata: Some(HashMap::from([
                 ("title".to_string(), json!("Test Document")),
                 ("author".to_string(), json!("John Doe")),
@@ -382,7 +390,7 @@ mod tests {
         };
 
         let json = serde_json::to_value(request).unwrap();
-        assert_eq!(json["url"], "https://example.com/document.pdf");
+        assert_eq!(json["file"], "https://example.com/document.pdf");
         assert_eq!(json["metadata"]["title"], "Test Document");
     }
 

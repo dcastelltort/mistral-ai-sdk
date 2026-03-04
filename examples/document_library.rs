@@ -9,8 +9,8 @@
 //! The example requires the MISTRAL_API_KEY environment variable to be set.
 
 use anyhow::{Context, Result};
-use mistral_ai_rs::{MistralClient, api::libraries::{LibrariesApi, LibraryIn, LibraryInUpdate, DocumentUploadRequest, ShareLibraryRequest}};
-use serde_json::json;
+use mistral_ai_rs::{MistralClient, api::libraries::{LibrariesApi, LibraryIn, LibraryInUpdate, ShareLibraryRequest}};
+use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -57,196 +57,51 @@ async fn main() -> Result<()> {
                 }
             }
             
-            // Example 3: Upload documents to the library
-            println!("\n3. Uploading documents to the library...");
-            let document_requests = vec![
-                DocumentUploadRequest {
-                    url: "https://example.com/research-paper1.pdf".to_string(),
-                    metadata: Some(vec![
-                        ("title".to_string(), json!("Advanced Machine Learning Techniques")),
-                        ("author".to_string(), json!("Jane Doe")),
-                        ("year".to_string(), json!(2023)),
-                        ("keywords".to_string(), json!(["AI", "ML", "Deep Learning"])),
-                    ].into_iter().collect()),
-                },
-                DocumentUploadRequest {
-                    url: "https://example.com/research-paper2.pdf".to_string(),
-                    metadata: Some(vec![
-                        ("title".to_string(), json!("Natural Language Processing Trends")),
-                        ("author".to_string(), json!("John Smith")),
-                        ("year".to_string(), json!(2024)),
-                        ("keywords".to_string(), json!(["NLP", "LLM", "Transformers"])),
-                    ].into_iter().collect()),
-                },
-            ];
+            // Example 3: Update the library
+            println!("\n3. Updating library information...");
+            let update_request = LibraryInUpdate {
+                name: Some("Research Papers - Updated".to_string()),
+                description: Some("An updated library for research papers with enhanced metadata".to_string()),
+            };
             
-            let mut uploaded_documents = Vec::new();
-            for doc_request in document_requests {
-                match libraries_api.upload_document(&library.id, &doc_request).await {
-                    Ok(document) => {
-                        let title = doc_request.metadata.as_ref().and_then(|m| m.get("title")).map(|v| v.to_string()).unwrap_or("unknown".to_string());
-                        println!("  ✓ Uploaded document: {} (ID: {})", title, document.id);
-                        uploaded_documents.push(document);
-                    }
-                    Err(e) => {
-                        eprintln!("  ⚠ Could not upload document: {}", e);
-                    }
+            match libraries_api.update_library(&library.id, &update_request).await {
+                Ok(updated_library) => {
+                    println!("✓ Library updated successfully!");
+                    println!("  New name: {}", updated_library.name);
+                    println!("  New description: {}", updated_library.description.unwrap_or("None".to_string()));
+                }
+                Err(e) => {
+                    eprintln!("⚠ Could not update library: {}", e);
                 }
             }
             
-            // Example 4: List documents in the library
-            if !uploaded_documents.is_empty() {
-                println!("\n4. Listing documents in the library...");
-                match libraries_api.list_documents(&library.id).await {
-                    Ok(documents) => {
-                        println!("Found {} documents:", documents.data.len());
-                        for doc in &documents.data {
-                            let title = doc.metadata.as_ref().and_then(|m| m.get("title")).map(|v| v.to_string()).unwrap_or("untitled".to_string());
-                            println!("  - {} (ID: {}, status: {})", title, doc.id, doc.status);
-                        }
-                    }
-                    Err(e) => {
-                        eprintln!("⚠ Could not list documents: {}", e);
-                    }
+            // Example 4: Share the library (if supported)
+            println!("\n4. Sharing the library with collaborators...");
+            let user_uuid = Uuid::new_v4(); // Generate a valid UUID for each run
+            let share_request = ShareLibraryRequest {
+                org_id: None,
+                level: "Viewer".to_string(),  // Must be "Viewer" or "Editor"
+                share_with_uuid: user_uuid.to_string(),  // Use generated UUID
+                share_with_type: "User".to_string(),  // Must be "User", "Workspace", or "Org"
+            };
+            
+            match libraries_api.share_library(&library.id, &share_request).await {
+                Ok(_) => {
+                    println!("✓ Library shared with user {}", user_uuid);
                 }
-                
-                // Example 5: Get document details and text content
-                if let Some(first_doc) = uploaded_documents.first() {
-                    println!("\n5. Getting document details and content...");
-                    
-                    // Get document details
-                    match libraries_api.get_document(&library.id, &first_doc.id).await {
-                        Ok(detailed_doc) => {
-                            println!("Document Details:");
-                            println!("  ID: {}", detailed_doc.id);
-                            println!("  URL: {}", detailed_doc.url);
-                            println!("  Status: {}", detailed_doc.status);
-                            println!("  Chunks: {}", detailed_doc.chunk_count.unwrap_or(0));
-                            
-                            if let Some(metadata) = &detailed_doc.metadata {
-                                println!("  Metadata:");
-                                for (key, value) in metadata {
-                                    println!("    {}: {}", key, value);
-                                }
-                            }
-                        }
-                        Err(e) => {
-                            eprintln!("⚠ Could not get document details: {}", e);
-                        }
-                    }
-                    
-                    // Get document text content
-                    match libraries_api.get_document_text(&library.id, &first_doc.id).await {
-                        Ok(text_content) => {
-                            println!("\n  Document Text Content:");
-                            println!("  First {} characters: {}", 
-                                text_content.text.len().min(100),
-                                &text_content.text[..text_content.text.len().min(100)]);
-                            if let Some(chunk) = &text_content.chunk {
-                                println!("  Chunk {}/{}", chunk.index + 1, chunk.total);
-                            }
-                        }
-                        Err(e) => {
-                            eprintln!("⚠ Could not get document text: {}", e);
-                        }
-                    }
-                    
-                    // Example 6: Get document status
-                    match libraries_api.get_document_status(&library.id, &first_doc.id).await {
-                        Ok(status) => {
-                            println!("\n  Document Status: {}", status.status);
-                            if let Some(progress) = status.progress {
-                                println!("  Progress: {:.1}%", progress * 100.0);
-                            }
-                            if let Some(error) = status.error {
-                                println!("  Error: {}", error);
-                            }
-                        }
-                        Err(e) => {
-                            eprintln!("⚠ Could not get document status: {}", e);
-                        }
-                    }
+                Err(e) => {
+                    eprintln!("⚠ Could not share library: {}", e);
                 }
-                
-                // Example 7: Update the library
-                println!("\n6. Updating library information...");
-                let update_request = LibraryInUpdate {
-                    name: Some("Research Papers - Updated".to_string()),
-                    description: Some("An updated library for research papers with enhanced metadata".to_string()),
-                };
-                
-                match libraries_api.update_library(&library.id, &update_request).await {
-                    Ok(updated_library) => {
-                        println!("✓ Library updated successfully!");
-                        println!("  New name: {}", updated_library.name);
-                        println!("  New description: {}", updated_library.description.unwrap_or("None".to_string()));
-                    }
-                    Err(e) => {
-                        eprintln!("⚠ Could not update library: {}", e);
-                    }
+            }
+            
+            // Example 5: Clean up - delete the library
+            println!("\n5. Cleaning up - deleting library...");
+            match libraries_api.delete_library(&library.id).await {
+                Ok(_) => {
+                    println!("✓ Deleted library: {}", library.id);
                 }
-                
-                // Example 8: Share the library (if supported)
-                println!("\n7. Sharing the library with collaborators...");
-                let share_request = ShareLibraryRequest {
-                    user_ids: vec!["user1@example.com".to_string(), "user2@example.com".to_string()],
-                    permission: "read".to_string(),
-                };
-                
-                match libraries_api.share_library(&library.id, &share_request).await {
-                    Ok(_) => {
-                        println!("✓ Library shared with {} users", share_request.user_ids.len());
-                    }
-                    Err(e) => {
-                        eprintln!("⚠ Could not share library: {}", e);
-                    }
-                }
-                
-                // Example 9: Get signed URLs for document access
-                if let Some(first_doc) = uploaded_documents.first() {
-                    println!("\n8. Getting signed URLs for document access...");
-                    
-                    match libraries_api.get_signed_url(&library.id, &first_doc.id).await {
-                        Ok(signed_url) => {
-                            println!("✓ Signed URL for document: {}", signed_url.url);
-                            println!("  Expires at: {}", signed_url.expires_at);
-                        }
-                        Err(e) => {
-                            eprintln!("⚠ Could not get signed URL: {}", e);
-                        }
-                    }
-                    
-                    match libraries_api.get_extracted_text_signed_url(&library.id, &first_doc.id).await {
-                        Ok(signed_url) => {
-                            println!("✓ Signed URL for extracted text: {}", signed_url.url);
-                        }
-                        Err(e) => {
-                            eprintln!("⚠ Could not get extracted text signed URL: {}", e);
-                        }
-                    }
-                }
-                
-                // Example 10: Clean up - delete documents and library
-                println!("\n9. Cleaning up - deleting documents and library...");
-                
-                for doc in &uploaded_documents {
-                    match libraries_api.delete_document(&library.id, &doc.id).await {
-                        Ok(_) => {
-                            println!("  ✓ Deleted document: {}", doc.id);
-                        }
-                        Err(e) => {
-                            eprintln!("  ⚠ Could not delete document {}: {}", doc.id, e);
-                        }
-                    }
-                }
-                
-                match libraries_api.delete_library(&library.id).await {
-                    Ok(_) => {
-                        println!("  ✓ Deleted library: {}", library.id);
-                    }
-                    Err(e) => {
-                        eprintln!("  ⚠ Could not delete library: {}", e);
-                    }
+                Err(e) => {
+                    eprintln!("⚠ Could not delete library: {}", e);
                 }
             }
         }
@@ -265,6 +120,10 @@ async fn main() -> Result<()> {
     println!("  - Share libraries with collaborators");
     println!("  - Generate signed URLs for secure access");
     println!("  - Support for chunked document processing");
+    
+    println!("\nNote: Document upload functionality requires multipart/form-data support");
+    println!("which will be implemented in a future update. The current example demonstrates");
+    println!("library creation, management, and sharing capabilities.");
     
     Ok(())
 }
