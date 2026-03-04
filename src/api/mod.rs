@@ -2,6 +2,7 @@ pub mod agents;
 pub mod audio;
 pub mod batch;
 pub mod chat;
+pub mod classifications;
 pub mod conversations;
 pub mod embeddings;
 pub mod files;
