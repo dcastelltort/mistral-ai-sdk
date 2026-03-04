@@ -3,14 +3,69 @@ use crate::error::MistralError;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+/// Input entry type for conversations
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum InputEntryType {
+    /// Message input entry
+    #[serde(rename = "message.input")]
+    MessageInput,
+    /// Message output entry
+    #[serde(rename = "message.output")]
+    MessageOutput,
+    /// Function result entry
+    #[serde(rename = "function.result")]
+    FunctionResult,
+    /// Function call entry
+    #[serde(rename = "function.call")]
+    FunctionCall,
+    /// Tool execution entry
+    #[serde(rename = "tool.execution")]
+    ToolExecution,
+    /// Agent handoff entry
+    #[serde(rename = "agent.handoff")]
+    AgentHandoff,
+}
+
+/// Input entry for conversations
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InputEntry {
+    /// Object type
+    #[serde(rename = "object")]
+    pub object_type: String,
+    
+    /// Entry type
+    #[serde(rename = "type")]
+    pub entry_type: InputEntryType,
+    
+    /// Unique identifier for the entry
+    pub id: String,
+    
+    /// Role (for message entries)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub role: Option<String>,
+    
+    /// Content
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+    
+    /// Optional name
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+
 /// Request to create a new conversation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateConversationRequest {
-    /// Model to use for the conversation
-    pub model: String,
+    /// Input entries for the conversation
+    pub inputs: Vec<InputEntry>,
     
-    /// List of messages in the conversation
-    pub messages: Vec<ConversationMessage>,
+    /// Optional model to use
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    
+    /// Optional agent ID
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
     
     /// Optional conversation metadata
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -23,6 +78,14 @@ pub struct CreateConversationRequest {
     /// Optional max tokens for the conversation
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_tokens: Option<i32>,
+    
+    /// Optional instructions
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub instructions: Option<String>,
+    
+    /// Whether to store the conversation
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub store: Option<bool>,
 }
 
 /// Message in a conversation
@@ -166,34 +229,47 @@ mod tests {
     #[test]
     fn test_create_conversation_request_serialization() {
         let request = CreateConversationRequest {
-            model: "mistral-tiny".to_string(),
-            messages: vec![
-                ConversationMessage {
-                    role: "user".to_string(),
-                    content: "Hello!".to_string(),
+            inputs: vec![
+                InputEntry {
+                    object_type: "entry".to_string(),
+                    entry_type: InputEntryType::MessageInput,
+                    id: "".to_string(), // Empty for user inputs
+                    role: Some("user".to_string()),
+                    content: Some("Hello!".to_string()),
                     name: None,
                 },
-                ConversationMessage {
-                    role: "assistant".to_string(),
-                    content: "Hi there!".to_string(),
+                InputEntry {
+                    object_type: "entry".to_string(),
+                    entry_type: InputEntryType::MessageOutput,
+                    id: "entry-2".to_string(), // Assistant outputs have IDs
+                    role: Some("assistant".to_string()),
+                    content: Some("Hi there!".to_string()),
                     name: Some("assistant".to_string()),
                 },
             ],
+            model: Some("mistral-tiny".to_string()),
+            agent_id: None,
             metadata: Some(HashMap::from([
                 ("user_id".to_string(), json!("123")),
                 ("session_id".to_string(), json!("abc")),
             ])),
             temperature: Some(0.7),
             max_tokens: Some(100),
+            instructions: None,
+            store: Some(true),
         };
         
         let json = serde_json::to_value(&request).unwrap();
-        assert_eq!(json["model"], "mistral-tiny");
-        assert_eq!(json["messages"][0]["content"], "Hello!");
-        assert_eq!(json["messages"][1]["name"], "assistant");
+        assert_eq!(json["inputs"][0]["type"], "message.input");
+        assert_eq!(json["inputs"][0]["id"], ""); // Empty string for user inputs
+        assert_eq!(json["inputs"][0]["content"], "Hello!");
+        assert_eq!(json["inputs"][1]["type"], "message.output");
+        assert_eq!(json["inputs"][1]["id"], "entry-2");
+        assert_eq!(json["inputs"][1]["name"], "assistant");
         assert_eq!(json["metadata"]["user_id"], "123");
         assert!(json["temperature"].as_f64().unwrap().abs() - 0.7 < f64::EPSILON);
         assert_eq!(json["max_tokens"], 100);
+        assert_eq!(json["store"], true);
     }
 
     #[test]

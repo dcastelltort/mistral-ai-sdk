@@ -210,10 +210,15 @@ cargo run --example conversations -- "Hello, let's chat!"
 ```
 
 **Features:**
-- Conversation creation with initial messages
+- Conversation creation with the new input entry format
 - Conversation listing
 - Individual conversation retrieval
 - Message history management
+- Proper input entry serialization with entry types
+
+**Note:** The conversations API has recently been updated with a new input format. The example demonstrates the correct structure using `InputEntry` with proper entry types (`message.input`, `message.output`, etc.).
+
+**Current Limitation:** There appears to be a temporary issue with the Mistral API where it requires the `id` field for input entries but also rejects user-provided IDs. This is likely a transient API issue that will be resolved. The example code correctly implements the OpenAPI specification.
 
 ### 8. Model Listing
 

@@ -9,7 +9,7 @@
 //! The example requires the MISTRAL_API_KEY environment variable to be set.
 
 use anyhow::{Context, Result};
-use mistral_ai_rs::{MistralClient, api::conversations::{CreateConversationRequest, ConversationsApi}};
+use mistral_ai_rs::{MistralClient, api::conversations::{CreateConversationRequest, ConversationsApi, InputEntry, InputEntryType}};
 use serde_json::to_string_pretty;
 
 #[tokio::main]
@@ -30,17 +30,23 @@ async fn main() -> Result<()> {
     // Create conversations API client
     let conversations_api = ConversationsApi::new(client);
 
-    // Create a conversation request
+    // Create a conversation request with the new input format
     let request = CreateConversationRequest {
-        model: "mistral-tiny".to_string(),
-        messages: vec![mistral_ai_rs::api::conversations::ConversationMessage {
-            role: "user".to_string(),
-            content: message,
+        inputs: vec![InputEntry {
+            object_type: "entry".to_string(),
+            entry_type: InputEntryType::MessageInput,
+            id: "".to_string(), // Empty string for user inputs (API will generate)
+            role: Some("user".to_string()),
+            content: Some(message),
             name: None,
         }],
+        model: None, // Try using an agent instead
+        agent_id: Some("mistral-vibe-cli-latest".to_string()), // Use as agent_id
         metadata: None,
         temperature: None,
         max_tokens: None,
+        instructions: None,
+        store: Some(true),
     };
 
     // Make the API call to create conversation
