@@ -4,12 +4,18 @@
 //!
 //! Usage:
 //!   cargo run --example fine_tuning -- <model> <training_file_id> <validation_file_id>
-//!   MISTRAL_API_KEY=your_key cargo run --example fine_tuning -- "mistral-tiny" "file-train-123" "file-val-456"
+//!   MISTRAL_API_KEY=your_key cargo run --example fine_tuning -- "open-mistral-nemo" "file-train-123" "file-val-456"
+//!   MISTRAL_API_KEY=your_key cargo run --example fine_tuning -- "mistral-medium-latest" "file-train-123" "file-val-456"
 //!
+//! Note: Currently, Mistral AI's fine-tuning API may have limited model availability.
+//! If you encounter "Model not available for this type of fine-tuning" errors,
+//! try using different job types (completion vs classifier) or check Mistral's documentation
+//! for the latest available models.
+//! 
 //! The example requires the MISTRAL_API_KEY environment variable to be set.
 
 use anyhow::{Context, Result};
-use mistral_ai_rs::{MistralClient, api::fine_tuning::{CreateFineTuningJobRequest, FineTuningApi}};
+use mistral_ai_rs::{MistralClient, api::fine_tuning::{CreateFineTuningJobRequest, FineTuningApi, FineTuningJobType}};
 use serde_json::{to_string_pretty, Value};
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -23,6 +29,21 @@ async fn main() -> Result<()> {
     // Get model from command line arguments
     let model = std::env::args().nth(1)
         .context("Usage: cargo run --example fine_tuning -- <model> <training_file_id> <validation_file_id>")?;
+
+    // Validate that the model is fine-tuneable
+    let valid_models = [
+        "ministral-3b-latest", "ministral-8b-latest", "open-mistral-7b", "open-mistral-nemo",
+        "mistral-small-latest", "mistral-medium-latest", "mistral-large-latest",
+        "pixtral-12b-latest", "codestral-latest"
+    ];
+
+    if !valid_models.contains(&model.as_str()) {
+        return Err(anyhow::anyhow!(
+            "Model '{}' is not available for fine-tuning. Available models: {}",
+            model,
+            valid_models.join(", ")
+        ));
+    }
 
     // Get training file ID from command line arguments
     let training_file_id = std::env::args().nth(2)
@@ -79,6 +100,7 @@ async fn main() -> Result<()> {
         model: model.clone(),
         training_files,
         validation_files,
+        job_type: FineTuningJobType::Completion, // Specify job type
         hyperparameters: {
             let mut params = HashMap::new();
             params.insert("n_epochs".to_string(), Value::from(3));
@@ -87,12 +109,22 @@ async fn main() -> Result<()> {
             Some(params)
         },
         suffix: Some("custom-finetune".to_string()),
+        auto_start: true,
     };
 
     // Make the API call
     println!("Sending fine-tuning job request to Mistral AI API...");
-    let response = fine_tuning_api.create_job(&request).await
-        .context("Failed to create fine-tuning job")?;
+    let response = match fine_tuning_api.create_job(&request).await {
+        Ok(response) => response,
+        Err(e) => {
+            if let Some(error_msg) = e.to_string().lines().find(|line| line.contains("Available model(s)")) {
+                eprintln!("Fine-tuning error: {}", error_msg);
+                eprintln!("Note: Currently, Mistral AI may not have any models available for completion fine-tuning.");
+                eprintln!("Try using classifier fine-tuning instead, or check the Mistral AI documentation for available models.");
+            }
+            return Err(e).context("Failed to create fine-tuning job");
+        }
+    };
 
     // Pretty print the response
     println!("\nFine-Tuning Job Creation Response:");

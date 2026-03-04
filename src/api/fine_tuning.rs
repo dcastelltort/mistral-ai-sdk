@@ -41,6 +41,16 @@ pub struct FineTuningJob {
     pub error: Option<String>,
 }
 
+/// Fine-tuning job type
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum FineTuningJobType {
+    /// Completion fine-tuning
+    Completion,
+    /// Classifier fine-tuning
+    Classifier,
+}
+
 /// Create fine-tuning job request
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateFineTuningJobRequest {
@@ -54,6 +64,10 @@ pub struct CreateFineTuningJobRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub validation_files: Option<Vec<String>>,
     
+    /// Job type (completion or classifier)
+    #[serde(rename = "job_type")]
+    pub job_type: FineTuningJobType,
+    
     /// Hyperparameters (optional)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hyperparameters: Option<HashMap<String, serde_json::Value>>,
@@ -61,6 +75,14 @@ pub struct CreateFineTuningJobRequest {
     /// Suffix for fine-tuned model name (optional)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub suffix: Option<String>,
+    
+    /// Auto start the job (default: true)
+    #[serde(default = "default_auto_start")]
+    pub auto_start: bool,
+}
+
+fn default_auto_start() -> bool {
+    true
 }
 
 /// List fine-tuning jobs response
@@ -229,21 +251,34 @@ mod tests {
     }
 
     #[test]
+    fn test_fine_tuning_job_type_serialization() {
+        let completion_job = FineTuningJobType::Completion;
+        let classifier_job = FineTuningJobType::Classifier;
+        
+        assert_eq!(serde_json::to_value(completion_job).unwrap(), json!("completion"));
+        assert_eq!(serde_json::to_value(classifier_job).unwrap(), json!("classifier"));
+    }
+
+    #[test]
     fn test_create_fine_tuning_job_request() {
         let request = CreateFineTuningJobRequest {
-            model: "mistral-tiny".to_string(),
+            model: "open-mistral-7b".to_string(),
             training_files: vec!["file-123".to_string()],
             validation_files: Some(vec!["file-456".to_string()]),
+            job_type: FineTuningJobType::Completion,
             hyperparameters: Some(HashMap::from([
                 ("n_epochs".to_string(), json!(3)),
                 ("batch_size".to_string(), json!(16)),
             ])),
             suffix: Some("custom-suffix".to_string()),
+            auto_start: true,
         };
         
-        assert_eq!(request.model, "mistral-tiny");
+        assert_eq!(request.model, "open-mistral-7b");
         assert_eq!(request.training_files, vec!["file-123"]);
         assert_eq!(request.suffix.as_deref(), Some("custom-suffix"));
+        assert!(matches!(request.job_type, FineTuningJobType::Completion));
+        assert!(request.auto_start);
     }
 
     #[test]
@@ -322,5 +357,24 @@ mod tests {
         
         // Just verify it compiles and can be created
         assert_eq!(api.client.api_key, "test-key");
+    }
+
+    #[test]
+    fn test_classifier_job_request() {
+        let request = CreateFineTuningJobRequest {
+            model: "open-mistral-7b".to_string(),
+            training_files: vec!["file-123".to_string()],
+            validation_files: Some(vec!["file-456".to_string()]),
+            job_type: FineTuningJobType::Classifier,
+            hyperparameters: Some(HashMap::from([
+                ("n_epochs".to_string(), json!(3)),
+            ])),
+            suffix: Some("test-classifier".to_string()),
+            auto_start: false,
+        };
+
+        let json = serde_json::to_string(&request).unwrap();
+        assert!(json.contains("\"job_type\":\"classifier\""));
+        assert!(json.contains("\"auto_start\":false"));
     }
 }

@@ -32,22 +32,23 @@ pub struct InputEntry {
     /// Object type
     #[serde(rename = "object")]
     pub object_type: String,
-    
+
     /// Entry type
     #[serde(rename = "type")]
     pub entry_type: InputEntryType,
-    
+
     /// Unique identifier for the entry
-    pub id: String,
-    
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+
     /// Role (for message entries)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub role: Option<String>,
-    
+
     /// Content
     #[serde(skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
-    
+
     /// Optional name
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -58,31 +59,31 @@ pub struct InputEntry {
 pub struct CreateConversationRequest {
     /// Input entries for the conversation
     pub inputs: Vec<InputEntry>,
-    
+
     /// Optional model to use
     #[serde(skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
-    
+
     /// Optional agent ID
     #[serde(skip_serializing_if = "Option::is_none")]
     pub agent_id: Option<String>,
-    
+
     /// Optional conversation metadata
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<HashMap<String, serde_json::Value>>,
-    
+
     /// Optional temperature for the conversation
     #[serde(skip_serializing_if = "Option::is_none")]
     pub temperature: Option<f32>,
-    
+
     /// Optional max tokens for the conversation
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_tokens: Option<i32>,
-    
+
     /// Optional instructions
     #[serde(skip_serializing_if = "Option::is_none")]
     pub instructions: Option<String>,
-    
+
     /// Whether to store the conversation
     #[serde(skip_serializing_if = "Option::is_none")]
     pub store: Option<bool>,
@@ -93,10 +94,10 @@ pub struct CreateConversationRequest {
 pub struct ConversationMessage {
     /// Role of the message sender
     pub role: String,
-    
+
     /// Content of the message
     pub content: String,
-    
+
     /// Optional name of the sender
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -107,19 +108,19 @@ pub struct ConversationMessage {
 pub struct CreateConversationResponse {
     /// Conversation ID
     pub id: String,
-    
+
     /// Object type
     pub object: String,
-    
+
     /// Creation timestamp
     pub created: i64,
-    
+
     /// Model used
     pub model: String,
-    
+
     /// List of messages in the conversation
     pub messages: Vec<ConversationMessage>,
-    
+
     /// Usage statistics
     pub usage: ConversationUsage,
 }
@@ -129,10 +130,10 @@ pub struct CreateConversationResponse {
 pub struct ConversationUsage {
     /// Number of prompt tokens
     pub prompt_tokens: i32,
-    
+
     /// Number of completion tokens
     pub completion_tokens: i32,
-    
+
     /// Total number of tokens
     pub total_tokens: i32,
 }
@@ -142,7 +143,7 @@ pub struct ConversationUsage {
 pub struct ListConversationsResponse {
     /// List of conversations
     pub data: Vec<ConversationSummary>,
-    
+
     /// Pagination information
     pub has_more: bool,
 }
@@ -152,16 +153,16 @@ pub struct ListConversationsResponse {
 pub struct ConversationSummary {
     /// Conversation ID
     pub id: String,
-    
+
     /// Object type
     pub object: String,
-    
+
     /// Creation timestamp
     pub created: i64,
-    
+
     /// Model used
     pub model: String,
-    
+
     /// Title or summary
     pub title: Option<String>,
 }
@@ -177,41 +178,51 @@ impl ConversationsApi {
     pub fn new(client: MistralClient) -> Self {
         Self { client }
     }
-    
+
     /// Create a new conversation
-    pub async fn create_conversation(&self, request: &CreateConversationRequest) -> Result<CreateConversationResponse, MistralError> {
+    pub async fn create_conversation(
+        &self,
+        request: &CreateConversationRequest,
+    ) -> Result<CreateConversationResponse, MistralError> {
         let response = self.client.post("/v1/conversations", request).await?;
         let conversation: CreateConversationResponse = serde_json::from_str(&response)?;
         Ok(conversation)
     }
-    
+
     /// List all conversations
-    pub async fn list_conversations(&self, page: Option<i32>, page_size: Option<i32>) -> Result<ListConversationsResponse, MistralError> {
+    pub async fn list_conversations(
+        &self,
+        page: Option<i32>,
+        page_size: Option<i32>,
+    ) -> Result<ListConversationsResponse, MistralError> {
         let mut params = Vec::new();
-        
+
         if let Some(page) = page {
             params.push(("page", page.to_string()));
         }
-        
+
         if let Some(page_size) = page_size {
             params.push(("page_size", page_size.to_string()));
         }
-        
+
         // For now, skip query params in this implementation
         // In a real implementation, we'd need to handle the lifetime properly
         let response = self.client.get("/v1/conversations", None).await?;
         let conversations: ListConversationsResponse = serde_json::from_str(&response)?;
         Ok(conversations)
     }
-    
+
     /// Get a specific conversation by ID
-    pub async fn get_conversation(&self, conversation_id: &str) -> Result<ConversationSummary, MistralError> {
+    pub async fn get_conversation(
+        &self,
+        conversation_id: &str,
+    ) -> Result<ConversationSummary, MistralError> {
         let path = format!("/v1/conversations/{}", conversation_id);
         let response = self.client.get(&path, None).await?;
         let conversation: ConversationSummary = serde_json::from_str(&response)?;
         Ok(conversation)
     }
-    
+
     /// Delete a conversation
     pub async fn delete_conversation(&self, conversation_id: &str) -> Result<(), MistralError> {
         let path = format!("/v1/conversations/{}", conversation_id);
@@ -233,7 +244,7 @@ mod tests {
                 InputEntry {
                     object_type: "entry".to_string(),
                     entry_type: InputEntryType::MessageInput,
-                    id: "".to_string(), // Empty for user inputs
+                    id: None, // User inputs don't specify IDs
                     role: Some("user".to_string()),
                     content: Some("Hello!".to_string()),
                     name: None,
@@ -241,7 +252,7 @@ mod tests {
                 InputEntry {
                     object_type: "entry".to_string(),
                     entry_type: InputEntryType::MessageOutput,
-                    id: "entry-2".to_string(), // Assistant outputs have IDs
+                    id: Some("entry-2".to_string()), // Assistant outputs have IDs
                     role: Some("assistant".to_string()),
                     content: Some("Hi there!".to_string()),
                     name: Some("assistant".to_string()),
@@ -258,10 +269,10 @@ mod tests {
             instructions: None,
             store: Some(true),
         };
-        
+
         let json = serde_json::to_value(&request).unwrap();
         assert_eq!(json["inputs"][0]["type"], "message.input");
-        assert_eq!(json["inputs"][0]["id"], ""); // Empty string for user inputs
+        assert!(!json["inputs"][0].as_object().unwrap().contains_key("id")); // User input should not have ID
         assert_eq!(json["inputs"][0]["content"], "Hello!");
         assert_eq!(json["inputs"][1]["type"], "message.output");
         assert_eq!(json["inputs"][1]["id"], "entry-2");
@@ -279,7 +290,7 @@ mod tests {
             content: "Test message".to_string(),
             name: Some("test-user".to_string()),
         };
-        
+
         let json = serde_json::to_value(&message).unwrap();
         assert_eq!(json["role"], "user");
         assert_eq!(json["content"], "Test message");
@@ -309,7 +320,7 @@ mod tests {
                 "total_tokens": 30
             }
         });
-        
+
         let response: CreateConversationResponse = serde_json::from_value(json).unwrap();
         assert_eq!(response.id, "conv_123");
         assert_eq!(response.model, "mistral-tiny");
@@ -338,7 +349,7 @@ mod tests {
             ],
             "has_more": false
         });
-        
+
         let response: ListConversationsResponse = serde_json::from_value(json).unwrap();
         assert_eq!(response.data.len(), 2);
         assert_eq!(response.data[0].id, "conv_1");
@@ -350,7 +361,7 @@ mod tests {
     fn test_conversations_api_creation() {
         let client = MistralClient::new("test-key".to_string());
         let api = ConversationsApi::new(client);
-        
+
         // Just verify it compiles and can be created
         assert_eq!(api.client.api_key, "test-key");
     }
@@ -364,7 +375,7 @@ mod tests {
             "model": "mistral-tiny",
             "title": "Test conversation"
         });
-        
+
         let summary: ConversationSummary = serde_json::from_value(json).unwrap();
         assert_eq!(summary.id, "conv_123");
         assert_eq!(summary.title.unwrap(), "Test conversation");
@@ -377,7 +388,7 @@ mod tests {
             "completion_tokens": 25,
             "total_tokens": 40
         });
-        
+
         let usage: ConversationUsage = serde_json::from_value(json).unwrap();
         assert_eq!(usage.prompt_tokens, 15);
         assert_eq!(usage.completion_tokens, 25);
