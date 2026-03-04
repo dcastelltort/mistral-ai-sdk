@@ -1,0 +1,29 @@
+# Rust build artifacts
+/target/
+
+# Cargo files
+Cargo.lock
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+
+# Environment files
+.env
+.env.local
+
+# Log files
+*.log
+
+# Database files
+*.db
+*.sqlite
+
+# OS generated files
+.DS_Store
+.DS_Store?
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
