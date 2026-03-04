@@ -8,8 +8,8 @@ pub struct FIMCompletionRequest {
     /// Model to use for FIM completion
     pub model: String,
     
-    /// List of messages for FIM completion
-    pub messages: Vec<FIMMessage>,
+    /// The text/code to complete (required)
+    pub prompt: String,
     
     /// Temperature (optional)
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -47,27 +47,17 @@ pub struct FIMCompletionRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub suffix: Option<String>,
     
-    /// Whether to use FIM prefix mode (optional)
+    /// Random seed (optional)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub use_prefix: Option<bool>,
-}
-
-/// FIM message
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FIMMessage {
-    /// Role of the message sender
-    pub role: String,
+    pub random_seed: Option<i32>,
     
-    /// Content of the message
-    pub content: String,
-    
-    /// Name of the sender (optional)
+    /// Minimum tokens (optional)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    pub min_tokens: Option<i32>,
     
-    /// Whether this message is a prefix for FIM (optional)
+    /// Metadata (optional)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub prefix: Option<bool>,
+    pub metadata: Option<serde_json::Value>,
 }
 
 /// FIM completion response
@@ -111,8 +101,8 @@ pub struct FIMChoice {
     /// Choice index
     pub index: i32,
     
-    /// Generated message
-    pub message: FIMMessage,
+    /// Generated message content
+    pub content: String,
     
     /// Finish reason
     pub finish_reason: String,
@@ -147,20 +137,8 @@ mod tests {
     fn test_fim_completion_request_serialization() {
         let request = FIMCompletionRequest {
             model: "codestral-latest".to_string(),
-            messages: vec![
-                FIMMessage {
-                    role: "user".to_string(),
-                    content: "def add_numbers(a: int, b: int) -> int:".to_string(),
-                    name: None,
-                    prefix: Some(true),
-                },
-                FIMMessage {
-                    role: "assistant".to_string(),
-                    content: "    \"\"\"Add two numbers\"\"\"\n    ".to_string(),
-                    name: None,
-                    prefix: None,
-                }
-            ],
+            prompt: "def add_numbers(a: int, b: int) -> int:".to_string(),
+            suffix: Some("    \"\"\"Add two numbers\"\"\"\n    ".to_string()),
             temperature: Some(0.7),
             max_tokens: Some(100),
             stream: None,
@@ -169,8 +147,9 @@ mod tests {
             frequency_penalty: None,
             top_p: None,
             user: None,
-            suffix: None,
-            use_prefix: None,
+            random_seed: None,
+            min_tokens: None,
+            metadata: None,
         };
 
         let json = serde_json::to_string(&request).unwrap();
@@ -180,7 +159,7 @@ mod tests {
 
         let deserialized: FIMCompletionRequest = serde_json::from_str(&json).unwrap();
         assert_eq!(deserialized.model, "codestral-latest");
-        assert_eq!(deserialized.messages.len(), 2);
+        assert_eq!(deserialized.prompt, "def add_numbers(a: int, b: int) -> int:");
         assert_eq!(deserialized.temperature, Some(0.7));
     }
 
@@ -200,11 +179,7 @@ mod tests {
             "choices": [
                 {
                     "index": 0,
-                    "message": {
-                        "content": "    return a + b",
-                        "role": "assistant",
-                        "prefix": false
-                    },
+                    "content": "    return a + b",
                     "finish_reason": "stop"
                 }
             ]
@@ -217,7 +192,7 @@ mod tests {
         assert_eq!(response.usage.prompt_tokens, 8);
         assert_eq!(response.usage.completion_tokens, 91);
         assert_eq!(response.choices.len(), 1);
-        assert_eq!(response.choices[0].message.content, "    return a + b");
+        assert_eq!(response.choices[0].content, "    return a + b");
     }
 
     #[test]

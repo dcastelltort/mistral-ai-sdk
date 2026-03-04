@@ -35,16 +35,18 @@ async fn main() -> Result<()> {
     let conversations_api = ConversationsApi::new(client);
 
     // Create a conversation request with the new input format
+    // Based on API requirements: either model or agent_id must be set
+    // User-provided input entries should not include IDs (API generates them)
     let request = CreateConversationRequest {
         inputs: vec![InputEntry {
             object_type: "entry".to_string(),
             entry_type: InputEntryType::MessageInput,
-            id: None, // Let API generate the ID for user inputs
+            id: None, // API will generate ID - must be None for user inputs
             role: Some("user".to_string()),
             content: Some(message),
             name: None,
         }],
-        model: Some("mistral-medium-latest".to_string()), // Use a valid model
+        model: Some("mistral-medium-latest".to_string()), // Required field
         agent_id: None,
         metadata: None,
         temperature: None,

@@ -9,7 +9,7 @@
 //! The example requires the MISTRAL_API_KEY environment variable to be set.
 
 use anyhow::{Context, Result};
-use mistral_ai_rs::{MistralClient, api::fim::{FIMCompletionRequest, FIMMessage, FIMApi}};
+use mistral_ai_rs::{MistralClient, api::fim::{FIMCompletionRequest, FIMApi}};
 use serde_json::to_string_pretty;
 
 #[tokio::main]
@@ -31,16 +31,11 @@ async fn main() -> Result<()> {
     let fim_api = FIMApi::new(client);
 
     // Create a FIM completion request
+    // Note: FIM uses prompt/suffix structure, not messages
     let request = FIMCompletionRequest {
         model: "codestral-latest".to_string(),
-        messages: vec![
-            FIMMessage {
-                role: "user".to_string(),
-                content: prompt,
-                name: None,
-                prefix: Some(true), // Mark as prefix for FIM
-            }
-        ],
+        prompt: prompt.to_string(), // The text to complete
+        suffix: Some(" test.".to_string()), // Optional suffix for FIM
         temperature: Some(0.2), // Lower temperature for code completion
         max_tokens: Some(200),
         stream: None,
@@ -49,8 +44,9 @@ async fn main() -> Result<()> {
         frequency_penalty: None,
         top_p: None,
         user: None,
-        suffix: None,
-        use_prefix: Some(true), // Enable prefix mode
+        random_seed: None,
+        min_tokens: None,
+        metadata: None,
     };
 
     // Make the API call
@@ -72,7 +68,7 @@ async fn main() -> Result<()> {
     // Extract and display the completed code
     if let Some(choice) = response.choices.first() {
         println!("\nCompleted Code:");
-        println!("{}", choice.message.content);
+        println!("{}", choice.content);
     }
 
     Ok(())

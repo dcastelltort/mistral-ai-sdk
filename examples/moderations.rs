@@ -39,7 +39,7 @@ async fn main() -> Result<()> {
     // Create a moderation request
     let request = ModerationRequest {
         input: text,
-        model: None, // Let the API use the default moderation model
+        model: Some("mistral-moderation-latest".to_string()), // Use the moderation model
     };
 
     // Create moderations API client
