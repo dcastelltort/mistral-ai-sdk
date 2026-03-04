@@ -9,7 +9,7 @@
 //! The example requires the MISTRAL_API_KEY environment variable to be set.
 
 use anyhow::{Context, Result};
-use mistral_ai_rs::{MistralClient, api::models::{ModelsApi, ModelListItem}};
+use mistral_ai_sdk::{MistralClient, api::models::{ModelsApi, ModelListItem}};
 use serde_json::to_string_pretty;
 
 #[tokio::main]

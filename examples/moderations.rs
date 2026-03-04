@@ -14,7 +14,7 @@
 //! If you get a permission error, your key may not have moderation access.
 
 use anyhow::{Context, Result};
-use mistral_ai_rs::{
+use mistral_ai_sdk::{
     api::moderations::{ModerationRequest, ModerationsApi},
     MistralClient,
 };

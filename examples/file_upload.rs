@@ -14,7 +14,7 @@
 //! Purpose options: fine-tune, batch, etc.
 
 use anyhow::{Context, Result};
-use mistral_ai_rs::{MistralClient, api::files::{FileUploadRequest, FilesApi}};
+use mistral_ai_sdk::{MistralClient, api::files::{FileUploadRequest, FilesApi}};
 use serde_json::to_string_pretty;
 use std::fs;
 use std::path::Path;

@@ -74,7 +74,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-mistral-ai-rs = { git = "https://github.com/your-repo/mistral-ai-rs" }
+mistral-ai-sdk = { git = "https://github.com/your-repo/mistral-ai-sdk" }
 ```
 
 ## Usage

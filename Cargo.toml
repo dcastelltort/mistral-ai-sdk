@@ -1,12 +1,12 @@
 [package]
-name = "mistral-ai-rs"
+name = "mistral-ai-sdk"
 version = "0.1.0"
 edition = "2021"
 authors = ["Mistral Vibe <vibe@mistral.ai>"]
-description = "Async Rust client for Mistral AI API"
+description = "Async Rust SDK for Mistral AI API"
 license = "Apache-2.0"
-repository = "https://github.com/mistralai/mistral-ai-rs"
-keywords = ["mistral", "ai", "async", "api"]
+repository = "https://github.com/mistralai/mistral-ai-sdk"
+keywords = ["mistral", "ai", "async", "api", "sdk"]
 categories = ["api-bindings", "asynchronous"]
 
 [dependencies]

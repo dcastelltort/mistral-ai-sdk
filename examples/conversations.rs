@@ -9,7 +9,7 @@
 //! The example requires the MISTRAL_API_KEY environment variable to be set.
 
 use anyhow::{Context, Result};
-use mistral_ai_rs::{
+use mistral_ai_sdk::{
     api::conversations::{ConversationsApi, CreateConversationRequest, InputEntry, InputEntryType},
     MistralClient,
 };

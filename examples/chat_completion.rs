@@ -9,7 +9,7 @@
 //! The example requires the MISTRAL_API_KEY environment variable to be set.
 
 use anyhow::{Context, Result};
-use mistral_ai_rs::{MistralClient, api::chat::{ChatCompletionRequest, ChatMessage, ChatApi}};
+use mistral_ai_sdk::{MistralClient, api::chat::{ChatCompletionRequest, ChatMessage, ChatApi}};
 use serde_json::to_string_pretty;
 
 #[tokio::main]

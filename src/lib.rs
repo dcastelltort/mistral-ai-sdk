@@ -3,7 +3,7 @@
 //! # Examples
 //!
 //! ```no_run
-//! use mistral_ai_rs::MistralClient;
+//! use mistral_ai_sdk::MistralClient;
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
